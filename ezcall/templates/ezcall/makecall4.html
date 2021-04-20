@@ -1,0 +1,225 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Телефонный справочник</title>
+    <link rel="shortcut icon" type="image/png" href="/static/favicon.ico"/>
+    <link href="/static/style/main.css" rel="stylesheet">
+    <!-- <link href="/static/style/animation.css" rel="stylesheet"> -->
+</head>
+<body>
+    <div class='wrapper'>
+    <div id='main'>
+    <div class="header">
+        <h3 style='font-family: Arial;'>Телефонная книга МФЦ</h3>
+    </div>     
+    <div class="search_container">
+        <input type="text" class="search" onkeyup="searchFunc('groups', 0)" placeholder="Поиск..">   
+    </div>    
+        <details class='details'>
+            <summary class='gen_summary'>Дирекция</summary>  
+            <ul class="groups">  
+                    <li>
+                        <b><p class='summary' style="color:rgb(224, 78, 57)">Руководство</p></b>
+                    </li>          
+                {% for number, name, mobile in phone_book %}
+                    <li>
+                        <div class='summary'>
+                            <div class="contact_name">{{ name }}</div>
+                            <div class='outer'>
+                                <button class="new_button" type='button' value='{{ number }}' onClick="return false;"><div>{{ number }}</div><img src='/static/phone.png' width="24px"/></button>
+                                {% if mobile != "empty:''" %}<button class="new_button" name='callee' type='submit' value='{{ mobile }}'><div>{{ mobile }}</div><img src='/static/phone.png' width="24px"/></button>{% endif %}
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>   
+        </details>
+        <details class='details'>
+            <summary class='gen_summary'>Районы</summary> 
+            <ul class="groups">            
+                {% for number, name, mobile in phone_book_raion %}
+                    <li>
+                        <div class='summary'>
+                            <div class="contact_name">{{ name }}</div>
+                            <div class='outer'>
+                                <button class="new_button" name='callee' type='submit' value='{{ number }}'><div>{{ number }}</div><img src='/static/phone.png' width="24px"/></button>
+                                {% if mobile != "empty:''" %}<button class="new_button" name='callee' type='submit' value='{{ mobile }}'><div>{{ mobile }}</div><img src='/static/phone.png' width="24px"/></button>{% endif %}
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>   
+        </details>  
+        <details class='details'>
+            <summary class='gen_summary'>УРМ</summary>
+            <ul class="groups">            
+                {% for mobile, number, name, fio in phone_book_urm %}
+                    <li>
+                        <div class='summary'>
+                            <div class="contact_name">
+                                <p class="string_element">{{ name }}</p>
+                                <p class="string_element">{{ fio }}</p>
+                            </div>
+                            <div class='outer'>
+                                <button class="new_button" name='callee' type='submit' value='{{ mobile }}'><div>{{ mobile }}</div><img src='/static/phone.png' width="24px"/></button>
+                                {% if number != "empty:''" %}<button class="new_button" name='callee' type='submit' value='{{ number }}'><div>{{ number }}</div><img src='/static/phone.png' width="24px"/></button>{% endif %}
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>   
+        </details> 
+    <!-- </form> -->
+    <div class="mybook">
+        <details class='details'>
+            <summary class='gen_summary'>Мои контакты</summary>   
+        <div>
+        <form id="create_form">
+            {% csrf_token %}
+            <div class="mybook_field">
+                <label>Имя контакта</label><br>
+                <input class="mybook_input" type="text" required maxlength="100" name="name" />
+            </div>
+            <div class="mybook_field">
+                <label>Осн. номер</label><br>
+                <input class="mybook_input" placeholder="6 цифр мин." pattern="[0-9]{6,11}" size="11" maxlength="11" name="number" />
+            </div>
+            <div class="mybook_field">
+                <label>Мобильный</label><br>
+                <input class="mybook_input" placeholder="11 цифр" pattern="[8]+[0-9]{10}" size="11" maxlength="11" name="mobile" />
+            </div>
+            <button class="mybook_submit" type="submit"> Добавить </button>
+        </form>
+        </div> 
+        <!-- <form name="call_form" action='http://10.7.1.155:8000/ezcall/calling' method='get'> -->
+        {% if favorites.count > 0 %}
+        <ul class="favorites">        
+            {% for fav in favorites %}
+            <li class="my_li">
+                <div class='my_summary'>
+                    <div class="contact_name">{{ fav.name }}</div>
+                    <div class='my_outer'>
+                        {% if fav.number != NULL %}<button class="new_button" name='callee' type='submit' value='{{ fav.number }}'><div>{{ fav.number }} </div><img src='/static/phone.png' width="24px"/></button>{% endif %}{% if fav.mobile != NULL %}<button class='new_button raion_mobile' name='callee' type='submit' value='{{ fav.mobile }}'><div>{{ fav.mobile }} </div><img src='/static/phone.png' width="24px"/></button>{% endif %}
+                    </div>
+                </div>
+                <input type="image" class="delete" id="{{fav.id}}" src='/static/delete.png' width="20px" onClick="return false;"/>
+                <!-- <a class="phone_delete" href="delete/{{fav.id}}/"><img src='/static/delete.png' width="20px"/></a> -->
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <!-- </form> -->
+        </details>
+    </div>
+    </div>
+    <div class='messages'>
+        <div class="info-msg"></div>
+    </div>
+    </div>
+    <div id='browser_error' style='display:none'>Вы используете устаревшую версию браузера. Приложение недоступно.</div>
+    <script src="/static/js/jquery-3.3.1.min.js">
+    </script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        /* for (let i=0; i<document.getElementsByClassName('raion_mobile').length; i++) {
+            if (document.getElementsByClassName('raion_mobile')[i].innerText == "empty:'' ") {
+                document.getElementsByClassName('raion_mobile')[i].style.display = "none";
+            }
+        } */
+        $(document).on("click", ".new_button", function() {
+            $clicked_btn = $(this);
+            let elemValue = this.value;
+            callReq(elemValue);
+        });
+        
+        function callReq(elemValue) {
+            $.ajax({
+                url: '/ezcall/calling',
+                data: {
+                    callee: elemValue
+                },
+                beforeSend: function() {
+                    $(".info-msg").text("Подключаемся к телефону...");
+                    $(".info-msg").css("color","#059");
+                    $(".info-msg").css("background-color","#BEF");
+                    $(".info-msg").css("display","block");
+                },
+                success: function(response){
+                    console.log(typeof response);
+                    if (response != 'False') {
+                        let message = JSON.parse(response).message;
+                        $(".info-msg").text(message);
+                        $(".info-msg").css("color","#D8000C");
+                        $(".info-msg").css("background-color","#FFBABA");
+                    }
+                    else {
+                        $(".info-msg").text("Звоним!");
+                        $(".info-msg").css("color","#4F8A10");
+                        $(".info-msg").css("background-color","#DFF2BF");
+                    }
+                    
+                    if(typeof window.history.pushState == 'function') {
+                        console.log('очистка');
+                        window.history.pushState({}, "Hide", "http://127.0.0.1:8080/ezcall/");
+                    }
+                },
+                complete: function(){
+                    setTimeout(function(){
+                        $(".info-msg").text('');
+                        $(".info-msg").css("display","none");
+                    }, 5000);
+                }
+            });
+        }
+
+        $(document).on("click", ".delete", function() {
+            $clicked_btn = $(this);
+            let elemId = this.id;
+            delReq(elemId);
+        });
+        
+        function delReq(elemId) {
+            $.ajax({
+                url: '/ezcall/delete',
+                data: {
+                    id: elemId
+                },
+                success: function(){
+                    $('#'+elemId).parent().remove();
+                }
+            });
+        }
+
+        $("#create_form").submit(function (e) {
+            e.preventDefault();
+            var serializedData = $(this).serialize();
+            $.ajax({
+                type: 'POST',
+                url: '/ezcall/create',
+                data: serializedData,
+                success: function (response) {
+                    $("#create_form").trigger('reset');
+
+                    let id = response.id;
+                    let name = response.name;
+                    let number = response.number;
+                    let mobile = response.mobile;
+
+                    $(".favorites").append('<li class="my_li"></li>');
+                    $(".my_li:last-child").append('<div class="my_summary"></div>');
+                    $(".my_summary:last-child").append('<div class="contact_name">'+name+'</div>');
+                    $(".my_summary:last-child").append('<div class="my_outer"></div>');
+                    if (number!=null) {
+                        $(".my_outer:last").append('<button class="new_button" name="callee" type="submit" value="'+number+'"><div>'+number+'</div><img src="/static/phone.png" width="24px"/></button>');
+                    }
+                    if (mobile!=null) {
+                        $(".my_outer:last").append('<button class="new_button raion_mobile" name="callee" type="submit" value="'+mobile+'"><div>'+mobile+'</div><img src="/static/phone.png" width="24px"/></button>');
+                    }
+                    $(".my_li:last-child").append(' <input type="image" class="delete" id="'+id+'" src="/static/delete.png" width="20px" onClick="return false;"/>');
+                    
+                }
+            })
+        })
+    </script>
+</body>
+</html>
